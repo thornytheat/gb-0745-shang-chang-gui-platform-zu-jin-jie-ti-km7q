@@ -22,7 +22,7 @@ def calculate(raw, period):
     raw_data = open_payload(raw)
     contracts = normalize_contracts(raw_data["contracts"])
     exempt = exempt_days(raw_data["holidays"])
-    statement = parse_statement(raw_data["statement"])
+    statement, issued = parse_statement(raw_data["statement"])
     events, isolated, duplicates = parse_events(raw_data["events"])
     after_cut = [issue(e["line"], "AFTER_CUT", e["id"]) for e in events if e["day"] >= end]
     in_cut = [e for e in events if e["day"] < end]
@@ -38,6 +38,14 @@ def calculate(raw, period):
         "行数勾稽": balance,
         "金额勾稽": summary(rows),
         "柜台对账": rows,
+        "收款记录": [
+            {
+                "柜台": shop,
+                "实缴分": statement[shop],
+                "出账日": issued[shop].isoformat() if issued[shop] else None,
+            }
+            for shop in sorted(statement)
+        ],
         "分段核算": current,
         "旧期回冲": credits,
         "收银行": [

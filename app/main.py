@@ -5,6 +5,7 @@ from app.errors import InputError
 from app.modules import STAGES, register
 from app.modules.m7_publish.export import evidence_pack
 from app.modules.m7_publish.service import run_once
+from app.modules.m8_arrears.service import build_ledger, parse_asof
 from app.store import RunStore
 from app.web import find_run, sample_bytes, store, yuan
 from flask import Flask, abort, jsonify, render_template, request, url_for
@@ -55,8 +56,12 @@ def create_app(config=None):
             "tiers": ("分段核算",),
             "refunds": ("旧期回冲", "退单证据"),
             "reconcile": ("柜台对账",),
+            "arrears": (),
             "publish": (),
         }[stage]
+        ledger = None
+        if stage == "arrears":
+            ledger = build_ledger(store().latest_runs(), parse_asof(request.args.get("asof")))
         return render_template(
             f"{stage}.html",
             active=stage,
@@ -65,6 +70,7 @@ def create_app(config=None):
             run=run,
             meta=run["运行清单"],
             keys=keys,
+            ledger=ledger,
             samples=SAMPLES,
             sample=request.args.get("sample", "mall"),
             reused=request.args.get("reuse"),

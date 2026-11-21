@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block kpis %}
+<section class="kpis" aria-label="台账汇总">
+  <div><span>未清合计 · 元</span><strong>{{ ledger['汇总']['未清分']|yuan }}</strong></div>
+  <div><span>滞纳金合计 · 元</span><strong>{{ ledger['汇总']['滞纳金分']|yuan }}</strong></div>
+  <div><span>逾期账期 · 个</span><strong>{{ ledger['汇总']['逾期账期'] }}</strong></div>
+  <div><span>挂起账期 · 个</span><strong>{{ ledger['汇总']['挂起账期'] }}</strong></div>
+  <div><span>基准日</span><strong>{{ ledger['基准日'] }}</strong></div>
+</section>
+{% endblock %}
+{% block stage %}
+<form id="asof-form" method="get" action="{{ url_for('work', stage='arrears') }}">
+  <input type="hidden" name="run" value="{{ meta['批次'] }}">
+  <input type="hidden" name="sample" value="{{ sample }}">
+  <label>账龄基准日 <input type="date" name="asof" value="{{ ledger['基准日'] }}"></label>
+  <button type="submit">重算账龄</button>
+</form>
+<div class="register-grid">
+  <section class="panel ledger-panel">
+    <div class="panel-head"><h2>账龄分布</h2><span>滞纳金日万分之五</span></div>
+    <div class="table-scroll" tabindex="0" aria-label="账龄分布">
+      <table>
+        <thead><tr><th scope="col">账龄档</th><th scope="col" class="num">账期数</th><th scope="col" class="num">未清 · 元</th><th scope="col" class="num">滞纳金 · 元</th></tr></thead>
+        <tbody>{% for band in ledger['汇总']['账龄分布'] %}<tr><td>{{ band['账龄档'] }}</td><td class="num">{{ band['账期数'] }}</td><td class="num">{{ band['未清分']|yuan }}</td><td class="num">{{ band['滞纳金分']|yuan }}</td></tr>{% endfor %}</tbody>
+      </table>
+    </div>
+  </section>
+  <section class="panel ledger-panel">
+    <div class="panel-head"><h2>挂起柜台</h2><span>{{ ledger['挂起']|length }} 条</span></div>
+    {% if ledger['挂起'] %}
+    <div class="table-scroll" tabindex="0" aria-label="挂起柜台">
+      <table>
+        <thead><tr><th scope="col">柜台</th><th scope="col">账期</th><th scope="col" class="num">应缴 · 元</th><th scope="col" class="num">实缴 · 元</th><th scope="col">挂起原因</th><th scope="col">来源批次</th></tr></thead>
+        <tbody>{% for row in ledger['挂起'] %}<tr>
+          <td>{{ row['柜台'] }}</td><td>{{ row['账期'] }}</td>
+          <td class="num">{{ row['应缴分']|yuan }}</td><td class="num">{{ row['实缴分']|yuan }}</td>
+          <td>{{ row['挂起原因']|join('、') }}</td>
+          <td><a href="{{ url_for('reconcile.inspect_reconcile', run_id=row['来源批次']) }}"><code>{{ row['来源批次'][:8] }}</code></a></td>
+        </tr>{% endfor %}</tbody>
+      </table>
+    </div>
+    {% else %}<p class="empty">无挂起柜台。</p>{% endif %}
+  </section>
+</div>
+<section class="panel ledger-panel">
+  <div class="panel-head"><h2>欠租台账</h2><span>{{ ledger['台账']|length }} 个欠缴账期</span></div>
+  {% if ledger['台账'] %}
+  <div class="table-scroll" tabindex="0" aria-label="欠租台账">
+    <table>
+      <thead><tr><th scope="col">柜台</th><th scope="col">账期</th><th scope="col" class="num">应缴 · 元</th><th scope="col" class="num">实缴 · 元</th><th scope="col" class="num">未清 · 元</th><th scope="col">出账日</th><th scope="col">起算日</th><th scope="col">起算依据</th><th scope="col" class="num">逾期天数</th><th scope="col">账龄档</th><th scope="col" class="num">滞纳金 · 元</th><th scope="col">来源批次</th></tr></thead>
+      <tbody>{% for row in ledger['台账'] %}<tr>
+        <td>{{ row['柜台'] }}</td><td>{{ row['账期'] }}</td>
+        <td class="num">{{ row['应缴分']|yuan }}</td><td class="num">{{ row['实缴分']|yuan }}</td><td class="num">{{ row['未清分']|yuan }}</td>
+        <td>{{ row['出账日'] or '未登记' }}</td><td>{{ row['起算日'] }}</td><td>{{ row['起算依据'] }}</td>
+        <td class="num">{{ row['逾期天数'] }}</td><td><span class="bucket" data-bucket="{{ row['账龄档'] }}">{{ row['账龄档'] }}</span></td>
+        <td class="num">{{ row['滞纳金分']|yuan }}</td>
+        <td><a href="{{ url_for('reconcile.inspect_reconcile', run_id=row['来源批次']) }}"><code>{{ row['来源批次'][:8] }}</code></a></td>
+      </tr>{% endfor %}</tbody>
+    </table>
+  </div>
+  {% else %}<p class="empty">截至基准日无欠账。</p>{% endif %}
+</section>
+<p class="ledger-note">逾期起算日取「合同应收日（当月六日）」与「实际出账日次日」两者较晚者，出账延迟不由商户承担；滞纳金按未清余额每日万分之五计至基准日。未清余额与「租金勾稽」同源同批，催缴与月结共用。挂起柜台待依据补齐后重跑入账，不进正式结果。</p>
+{% endblock %}

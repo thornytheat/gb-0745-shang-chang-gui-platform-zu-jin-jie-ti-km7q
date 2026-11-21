@@ -41,6 +41,13 @@ tbody tr:hover { background: var(--surface-2); }
 .num { text-align: right; font-family: var(--mono); font-variant-numeric: tabular-nums; }
 .empty, .archive { padding-inline: 16px; }
 .archive { padding-inline-start: 36px; }
+#asof-form { display: flex; flex-wrap: wrap; align-items: end; gap: 9px 17px; margin: 0 0 20px; }
+#asof-form label { display: grid; gap: 4px; color: var(--muted); font-size: 12px; }
+.bucket { padding-inline: 4px; border: 1px solid currentColor; }
+.bucket[data-bucket="未逾期"] { color: var(--ok); }
+.bucket[data-bucket="1-30天"], .bucket[data-bucket="31-60天"] { color: var(--warn); }
+.bucket[data-bucket="61-90天"], .bucket[data-bucket="90天以上"] { color: var(--bad); }
+.ledger-note { color: var(--muted); font-size: 12px; }
 @media print {
   body { display: block; color: #111; background: white; }
   .rail, #run-form, #print, [data-export] { display: none; }

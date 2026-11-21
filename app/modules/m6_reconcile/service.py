@@ -1,4 +1,5 @@
 from collections import Counter
+from datetime import date
 
 from app.errors import InputError
 from app.modules.m1_intake.amounts import cents
@@ -6,16 +7,20 @@ from app.modules.m1_intake.service import transaction_key
 
 
 def parse_statement(records):
-    values = {}
+    values, issued = {}, {}
     for row in records:
         try:
             shop = transaction_key(row, "shop")
             if shop in values:
                 raise ValueError("柜台重复")
             values[shop] = cents(row["paid"])
+            day = row.get("issued")
+            issued[shop] = date.fromisoformat(day) if isinstance(day, str) else None
+            if day is not None and issued[shop] is None:
+                raise ValueError("出账日无效")
         except (ValueError, KeyError, TypeError) as exc:
-            raise InputError("BAD_STATEMENT", "缴款账字段有误或柜台重复") from exc
-    return values
+            raise InputError("BAD_STATEMENT", "缴款账字段、出账日有误或柜台重复") from exc
+    return values, issued
 
 
 def reconcile(current, credits, statement):

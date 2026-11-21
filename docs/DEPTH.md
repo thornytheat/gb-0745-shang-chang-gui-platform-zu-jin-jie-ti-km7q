@@ -14,6 +14,7 @@
 | M4 累进抽成 | 对照档位费用与版本保底 | `GET /api/tiers/{id}` | `app/modules/m4_tiers/progressive.py` `app/modules/m4_tiers/service.py` | `tests/test_tiers.py` |
 | M5 退单回冲 | 追原流水，重算旧月应计差 | `GET /api/refunds/{id}` | `app/modules/m5_refunds/credits.py` `app/modules/m5_refunds/service.py` | `tests/test_refunds.py` |
 | M6 租金勾稽 | 核对实缴、欠缴与账簿行数 | `GET /api/reconcile/{id}` | `app/modules/m6_reconcile/service.py` `app/modules/m6_reconcile/totals.py` | `tests/test_reconcile.py` |
+| M8 欠租账龄 | 按基准日汇各账期未清、账龄档与滞纳金，挂起存疑柜台 | `GET /api/arrears` | `app/modules/m8_arrears/aging.py` `app/modules/m8_arrears/service.py` | `tests/test_arrears.py` |
 | M7 结算复核 | 从批次凭证复算、下载证据 | `GET /api/publish/{id}` `POST /api/runs` | `app/modules/m7_publish/service.py` `app/modules/m7_publish/export.py` `app/store.py` | `tests/test_publish.py` |
 
 ## 陷阱登记
@@ -31,6 +32,10 @@
 | TRAP-17 | `mall.json` 旧金额字段 gross | 旧账对应列丢失 | 显式兼容别名 | `app/modules/m1_intake/service.py` | `tests/test_intake.py::test_legacy_alias` |
 | TRAP-23 | `mall.json` 合同于当日切换 | 同时计入两个版本 | 合同 `[start,end)` | `app/modules/m2_contracts/versions.py` | `tests/test_contracts.py::test_adjacent_boundaries` |
 | TRAP-25 | `mall.json` 存在合同重叠 | 随机采信一版 | 暂停区间内归属并提供冲突区间 | `app/modules/m2_contracts/service.py` | `tests/test_contracts.py::test_overlap_not_guessed` |
+| TRAP-26 | 账单晚出但合同按当月五日催缴 | 商户替出账延迟付滞纳金 | 起算日取合同应收日（当月6日）与出账日次日的较晚者，台账逐行记依据 | `app/modules/m8_arrears/aging.py` | `tests/test_arrears.py::test_late_bill_defers_start_to_merchant` |
+| TRAP-27 | 柜台缺缴款单或合同冲突 | 未清余额不可信仍入台账 | 挂起并列明原因，不进台账与汇总 | `app/modules/m8_arrears/service.py` | `tests/test_arrears.py::test_conflicted_or_unbased_shops_suspended` |
+| TRAP-28 | 同批收款重跑或分批到账 | 欠期与滞纳金重复新增 | 批次幂等复用，台账按账期取最新成功批次 | `app/store.py` `app/modules/m7_publish/service.py` | `tests/test_arrears.py::test_rerun_same_book_never_double_counts` |
+| TRAP-29 | 账期多缴（应退） | 当成负欠租跨期冲抵 | 未清以零计且不进台账，不抵其他账期 | `app/modules/m8_arrears/service.py` | `tests/test_arrears.py::test_overpaid_period_stays_out_of_ledger` |
 
 ## 验算
 

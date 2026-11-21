@@ -25,6 +25,7 @@
       <a data-export href="{{ url_for('export', run_id=meta['批次']) }}">下载结算凭证</a>
     </header>
     <main class="content">
+      {% block kpis %}
       <section class="kpis" aria-label="月结指标">
         <div><span>应缴 · 元</span><strong id="due">{{ run['金额勾稽']['应缴分']|yuan }}</strong></div>
         <div><span>实缴 · 元</span><strong>{{ run['金额勾稽']['实缴分']|yuan }}</strong></div>
@@ -32,6 +33,7 @@
         <div><span>隔离 · 行</span><strong>{{ run['行数勾稽']['隔离'] }}</strong></div>
         <div><span>行数差额</span><strong>{{ run['行数勾稽']['差额行'] }}</strong></div>
       </section>
+      {% endblock %}
       <form id="run-form" method="post" action="/api/runs" enctype="multipart/form-data">
         <input type="hidden" name="stage" value="{{ active }}">
         <label>账期<input name="period" type="month" required value="{{ meta['账期'] }}"></label>

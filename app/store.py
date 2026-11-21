@@ -34,3 +34,12 @@ class RunStore:
                 json.loads(row[0])["运行清单"]
                 for row in db.execute("SELECT payload FROM runs ORDER BY rowid DESC LIMIT 40")
             ]
+
+    def latest_runs(self):
+        latest = {}
+        with closing(self.connect()) as db:
+            rows = db.execute("SELECT payload FROM runs ORDER BY rowid").fetchall()
+        for (payload,) in rows:
+            run = json.loads(payload)
+            latest[run["运行清单"]["账期"]] = run
+        return [latest[period] for period in sorted(latest)]
